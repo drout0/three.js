@@ -140,6 +140,60 @@ Object.assign( Line3.prototype, {
 
 		return line.start.equals( this.start ) && line.end.equals( this.end );
 
+	},
+	
+	intersectLine: function ( line, target ) {
+		
+		let p1 = this.start;
+		let p2 = this.end;
+		let p3 = line.start;
+		let p4 = line.end;
+
+		let p43 = { x: p4.x - p3.x, y: p4.y - p3.y, z: p4.z - p3.z };
+		if (Math.abs(p43.x) < eps && Math.abs(p43.y) < eps && Math.abs(p43.z) < eps)
+			return false;
+		
+		let p21 = { x: p2.x - p1.x, y: p2.y - p1.y, z: p2.z - p1.z };
+		if (Math.abs(p21.x) < eps && Math.abs(p21.y) < eps && Math.abs(p21.z) < eps)
+			return false;
+		
+		let p13 = { x: p1.x - p3.x, y: p1.y - p3.y, z: p1.z - p3.z };
+
+		let d1343 = p13.x * p43.x + p13.y * p43.y + p13.z * p43.z;
+		let d4321 = p43.x * p21.x + p43.y * p21.y + p43.z * p21.z;
+		let d1321 = p13.x * p21.x + p13.y * p21.y + p13.z * p21.z;
+		let d4343 = p43.x * p43.x + p43.y * p43.y + p43.z * p43.z;
+		let d2121 = p21.x * p21.x + p21.y * p21.y + p21.z * p21.z;
+
+		let denom = d2121 * d4343 - d4321 * d4321;
+
+		if (Math.abs(denom) < eps)
+			return false;
+
+		let numer = d1343 * d4321 - d1321 * d4343;
+
+		let mua = numer / denom;
+		let mub = (d1343 + d4321 * mua) / d4343;
+
+		pa = new THREE.Vector3();
+		pb = new THREE.Vector3();
+
+		pa.x = p1.x + mua * p21.x;
+		pa.y = p1.y + mua * p21.y;
+		pa.z = p1.z + mua * p21.z;
+
+		pb.x = p3.x + mub * p43.x;
+		pb.y = p3.y + mub * p43.y;
+		pb.z = p3.z + mub * p43.z;
+
+		target = new Line3(pa, pb);
+
+		let distLa = this.closestPointToPointParameter(pa);
+		let distLb = line.closestPointToPointParameter(pb);
+		
+		let linesIntersect = distLa >= 0 && distLa <= 1 && distLb >= 0 && distLb <= 1;
+		
+		return linesIntersect;
 	}
 
 } );
